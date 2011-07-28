@@ -29,12 +29,12 @@ class OAuth2DataStore(object):
         The resource server MUST Validate the access token and ensure it has not
         expired and that its scope covers the requested resource.
         """
-        print "Looking for token with code=", token
         access_token = Session.query(OAuth2AccessToken).filter_by(token=token).first()
-        print "All tokens found=", Session.query(OAuth2AccessToken).all()
-        print "Found token in db=", access_token
         # TODO: validate scope of grant
-        return access_token and not access_token.expired()
+        if access_token and not access_token.expired():
+            return (True, access_token.client_id)
+        else:
+            return (False, None)
     
     def get_client_by_key(self, key):
         q = Session.query(OAuth2Client).filter_by(key=key)
