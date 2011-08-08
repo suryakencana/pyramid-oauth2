@@ -54,6 +54,7 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
         if allowed:
             client_id = datastore.client_id
             access_token = datastore.issue_access_token(client_id=client_id,
+                                                        allowed_scopes=scopes,
                                                         refreshable=False)
             response = dict(access_token=access_token.token,
                             token_type="bearer",

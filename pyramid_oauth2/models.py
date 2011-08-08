@@ -137,6 +137,9 @@ class OAuth2AccessToken(Base):
         relative to the server's time or it has been revoked."""
         return not self.is_revoked() or self.expires_at < datetime.datetime.now()
     
+    def set_scopes(self, scopes):
+        self.allowed_scopes = " ".join(scopes)
+    
     def get_scopes(self):
         """Returns a list of all scopes allowed by the access token."""
         return self.allowed_scopes.split(' ')
