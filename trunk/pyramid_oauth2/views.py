@@ -3,13 +3,16 @@ Created on 19-jul-2011
 
 @author: kevin
 '''
-from pyramid_handlers import action
+from pyramid.view import view_config
 from pyramid_oauth2.oauth2.authorization import client_credentials_authorization
-from pyramid_oauth2.resources.request import OAuth2Request
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
+from pyramid_oauth2.resources.request import OAuth2Request
 
 
-@action(renderer="json", request_method='GET', http_cache=0)
+@view_config(route_name='oauth2-auth-endpoint', 
+             renderer='json', 
+             request_method='GET', 
+             http_cache=0)
 def authorization_endpoint(request):
     """
     The authorization endpoint is used to interact with the resource
@@ -21,8 +24,10 @@ def authorization_endpoint(request):
     raise NotImplementedError()
 
 
-
-@action(renderer="json", request_method='POST', http_cache=0)
+@view_config(route_name='oauth2-token-endpoint', 
+             renderer='json', 
+             request_method='GET',
+             http_cache=0)
 def token_endpoint(request):
     """
     The token endpoint is used by the client to obtain an access token by
@@ -30,9 +35,10 @@ def token_endpoint(request):
     endpoint is used with every authorization grant except for the
     implicit grant type (since an access token is issued directly).
     """
+    print request.params
     request = OAuth2Request(request)
     
-    grant_type = request.POST.get('grant_type')
+    grant_type = request.params.get('grant_type')
     
     # Authorization Code Grant
     if grant_type == 'authorization_code':
@@ -42,7 +48,10 @@ def token_endpoint(request):
         return OAuth2ErrorHandler.error_unsupported_grant_type() 
     # Client Credentials Grant
     elif grant_type == 'client_credentials':
-        scope = request.POST.get('scope') # Optional
+        scope = request.params.get('scope') # Optional
+        print request.params
+        if scope:
+            scope = scope.split(' ')
         return client_credentials_authorization(request.authentication, scope)        
     else:
         return OAuth2ErrorHandler.error_unsupported_grant_type()

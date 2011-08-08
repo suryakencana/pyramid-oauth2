@@ -5,8 +5,9 @@ Created on 20-jul-2011
 '''
 from pyramid_oauth2.oauth2.datastore import OAuth2DataStore
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
+import transaction
 
-def client_credentials_authorization(auth_credentials, scope):
+def client_credentials_authorization(auth_credentials, scopes=[]):
     """
     The client can request an access token using only its client
     credentials (or other supported means of authentication) when the
@@ -30,6 +31,7 @@ def client_credentials_authorization(auth_credentials, scope):
                  
                  
     The flow illustrated in Figure 6 includes the following steps:
+    
     (A)  The client authenticates with the authorization server and
          requests an access token from the token endpoint.
     (B)  The authorization server authenticates the client, and if valid
@@ -41,20 +43,26 @@ def client_credentials_authorization(auth_credentials, scope):
     Since the client authentication is used as the authorization grant,
     no additional authorization request is needed.    
     """
-    scope = scope.split(' ')
     
     # Authentication
     datastore = OAuth2DataStore()
     authenticated = datastore.confirm_authentication_credentials(auth_credentials)
     
     if authenticated:
-        client_id = datastore.client_id
-        access_token = datastore.issue_access_token(client_id=client_id,
-                                                    refresh=False)
-        return dict(access_token=access_token.token,
-                    token_type="example",
-                    expires_in=access_token.expires_at,
-                    example_parameter="example_value")
+        # Validate allowed 
+        allowed = datastore.confirm_allowed_scopes(scopes)
+        if allowed:
+            client_id = datastore.client_id
+            access_token = datastore.issue_access_token(client_id=client_id,
+                                                        refreshable=False)
+            response = dict(access_token=access_token.token,
+                            token_type="bearer",
+                            expires_in=access_token.expires_at.isoformat())
+            transaction.commit()
+            return response
+        else:
+            # Scope was not allowed
+            return OAuth2ErrorHandler.error_invalid_scope()
     else:
         # Client not authorized
         return OAuth2ErrorHandler.error_unauthorized_client()

@@ -17,7 +17,7 @@ class OAuth2ErrorHandler(object):
         otherwise malformed.
         """
         return dict(error='invalid_request',
-                    error_description=__doc__)
+                    error_description="")
     
     @staticmethod
     def error_invalid_client():
@@ -35,7 +35,7 @@ class OAuth2ErrorHandler(object):
         authentication scheme used by the client.
         """
         return dict(error='invalid_client',
-                    error_description=__doc__)
+                    error_description="")
     
     @staticmethod
     def error_invalid_grant():
@@ -45,7 +45,7 @@ class OAuth2ErrorHandler(object):
         authorization request, or was issued to another client.
         """
         return dict(error='invalid_grant',
-                    error_description=__doc__)
+                    error_description="")
     
     @staticmethod
     def error_unauthorized_client():
@@ -54,7 +54,7 @@ class OAuth2ErrorHandler(object):
         authorization grant type.
         """
         return dict(error='unauthorized_client',
-                    error_description=__doc__)
+                    error_description="")
     
     @staticmethod
     def error_unsupported_grant_type():
@@ -63,7 +63,7 @@ class OAuth2ErrorHandler(object):
         authorization server.
         """
         return dict(error='unsupported_grant_type',
-                    error_description=__doc__)
+                    error_description="")
     
     @staticmethod
     def error_invalid_scope():
@@ -72,7 +72,7 @@ class OAuth2ErrorHandler(object):
         exceeds the scope granted by the resource owner.
         """
         return dict(error='invalid_scope',
-                    error_description=__doc__)
+                    error_description="")
         
     @staticmethod
     def error_invalid_token(token_type):

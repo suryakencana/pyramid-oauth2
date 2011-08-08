@@ -3,8 +3,7 @@ Created on 19-jul-2011
 
 Code borrowed from pyramid-oauth project
 
-
-@author: kevin
+@author: Kevin Van Wilder <kevin@tick.ee>
 '''
 
 import urllib
@@ -31,7 +30,3 @@ def nonce():
 def hmacsha1(key, signature_base):
     hm = hmac.new(key, signature_base, hashlib.sha1)
     return hm.digest().encode('base64').strip()
-
-def generate_consumer_key():
-    u = uuid.uuid4()
-    return u.hex
