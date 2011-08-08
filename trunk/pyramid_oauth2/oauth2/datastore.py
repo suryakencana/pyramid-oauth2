@@ -71,9 +71,10 @@ class OAuth2DataStore(object):
         q = Session.query(OAuth2Client).filter_by(key=key)
         return q.one()
     
-    def issue_access_token(self, client_id, refreshable=True):
+    def issue_access_token(self, client_id, refreshable=True, allowed_scopes=[]):
         """Creates an access token for the client."""
         access_token = OAuth2AccessToken(refreshable)
+        access_token.set_scopes(allowed_scopes)
         client = self.get_client_by_id(client_id)
         access_token.client = client
         # Increment granted client tokens
