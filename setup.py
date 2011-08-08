@@ -8,7 +8,6 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'Pyramid>=1.1',
-    'pyramid_handlers',
     'akhet>=1.0.2',
     'sqlahelper'
     ]

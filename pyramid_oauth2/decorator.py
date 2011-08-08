@@ -18,9 +18,10 @@ def oauth2(allowed_scope=[]):
             if handler.request.access_token:
                 access_token = handler.request.access_token.get('token')
                 datastore = OAuth2DataStore()
-                valid, client_id = datastore.validate_access_token(access_token, allowed_scope)
+                valid = datastore.validate_access_token(access_token, allowed_scope)
                 if valid:
                     # Add client id to the request and execute view
+                    client_id = datastore.client_id
                     setattr(handler, 'requestor_id', client_id)
                     return view_function(*args, **kw)
                 # No token found or token expired.
@@ -29,6 +30,7 @@ def oauth2(allowed_scope=[]):
             
             # Request does not contain an access token
             else:
+                print "no token found."
                 raise HTTPUnauthorized()
                                 
         return new_function
