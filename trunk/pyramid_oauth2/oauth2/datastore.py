@@ -4,8 +4,9 @@ Created on 19-jul-2011
 @author: Kevin Van Wilder <kevin@tick.ee>
 '''
 from pyramid_oauth2.models import OAuth2Client, OAuth2AccessToken
+from pyramid_oauth2.oauth2.exceptions import ClientNotFound
+from sqlalchemy.orm.exc import NoResultFound
 import sqlahelper
-import transaction
 
 Session = sqlahelper.get_session()
 
@@ -27,6 +28,10 @@ class OAuth2DataStore(object):
     
     def confirm_allowed_scopes(self, scopes):
         """Matches the requested scopes of the client to the database."""
+        # Always allow if no scope specified
+        if not scopes:
+            return True
+        # Validate if scopes specified
         if self.client_authenticated:
             client = self.get_client_by_id(self.client_id)
             for scope in scopes:
@@ -45,26 +50,41 @@ class OAuth2DataStore(object):
             given_key = authentication.get('client_key')
             given_secret = authentication.get('client_secret')
             # fetch client matching key
-            possible_client = self.get_client_by_key(given_key)
-            if possible_client.check_secret(given_secret):
-                self.client_id = possible_client.id
-                self.client_authenticated = True
-            return self.client_authenticated
+            try:
+                possible_client = self.get_client_by_key(given_key)
+            except NoResultFound:
+                # no user found matching key
+                return False
+            else:
+                # user found, match key
+                if possible_client.check_secret(given_secret):
+                    self.client_id = possible_client.id
+                    self.client_authenticated = True
+                return self.client_authenticated
         return False
     
     def validate_access_token(self, token, required_scopes=[]):
         """The resource server MUST Validate the access token and ensure it has 
         not expired and that its scope covers the requested resource."""
         access_token = Session.query(OAuth2AccessToken).filter_by(token=token).first()
+        # Validate access token
         if access_token and not access_token.expired():
-            self.client_id = access_token.client_id
-            return True
+            # Validate token scopes
+            for token_scope in access_token.get_scopes():
+                if token_scope in required_scopes:
+                    self.client_id = access_token.client_id
+                    return True
+            # Token did not contain a correct scope
+            return False
         else:
             return False
     
     def get_client_by_id(self, id):
         """Finds the client matching the client id."""
-        return Session.query(OAuth2Client).get(id)
+        client = Session.query(OAuth2Client).get(id)
+        if not client:
+            raise ClientNotFound()
+        return client
     
     def get_client_by_key(self, key):
         """Finds the client matching the client key."""
