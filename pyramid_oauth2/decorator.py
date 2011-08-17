@@ -8,7 +8,7 @@ from pyramid_oauth2.oauth2.datastore import OAuth2DataStore
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
 from pyramid_oauth2.resources.request import OAuth2Request
 
-def oauth2(allowed_scope=[]):
+def oauth2(allowed_scope=[], mandatory=True):
     def wrap(view_function):
         def new_function(*args, **kw):
             handler = args[0]
@@ -24,14 +24,16 @@ def oauth2(allowed_scope=[]):
                     client_id = datastore.client_id
                     setattr(handler, 'requestor_id', client_id)
                     return view_function(*args, **kw)
-                # No token found or token expired.
+                # No
                 else:
                     return OAuth2ErrorHandler.error_invalid_token(handler.request.access_token.get('type'))
             
             # Request does not contain an access token
             else:
-                print "no token found."
-                raise HTTPUnauthorized()
+                if mandatory:
+                    raise HTTPUnauthorized()
+                else:
+                    return view_function(*args, **kw)
                                 
         return new_function
     return wrap

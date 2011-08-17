@@ -17,7 +17,7 @@ import sqlalchemy.orm as orm
 Base = sqlahelper.get_base()
 Session = sqlahelper.get_session()
 
-UNUSABLE_SECRET = "!"
+UNUSABLE_SECRET = ""
 
 class OAuth2Client(Base):
     __tablename__ = 'oauth2_client'
@@ -41,34 +41,19 @@ class OAuth2Client(Base):
         self.image_url = image_url
         self.redirect_uri = redirect_uri
         self.key = self._generate_unique_key()
-        self.set_unusable_secret()
     
     def set_scopes(self, allowed_scopes=[]):
         """Sets the scopes allowed by the client."""
         self.allowed_scopes = ' '.join(allowed_scopes)
     
-    def set_unusable_secret(self):
-        """Invalidates the secret"""
-        self.secret = UNUSABLE_SECRET
-    
-    def has_usable_secret(self):
-        """Checks whether the client has a usable secret."""
-        return self.secret != UNUSABLE_SECRET
-    
-    def set_secret(self, raw_secret):
-        """Sets a new secret for the user."""
-        import os, base64
-        algo = "ssha"
-        salt = str.lower(base64.b16encode(os.urandom(4)))
-        hsh = self._get_hex_string(algo, salt, raw_secret)
-        self.secret = '%s$%s$%s' % (algo, salt, hsh)
+    def generate_secret(self, raw_secret):
+        """Generates a new secret for the user."""
+        self.secret = generate_key(length=CLIENT_SECRET_LENGTH, 
+                                   allowed_chars=ALLOWED_CHARACTERS)
     
     def check_secret(self, raw_secret):
         """Validates the raw_secret to the one in the database."""
-        if self.has_usable_secret():
-            algo, salt, hsh = self.secret.split('$')
-            return hsh == self._get_hex_string(algo, salt, raw_secret)
-        return False
+        return raw_secret == self.secret
     
     def revoke(self):
         """Revoke all authorization requests, access grants and access tokens 
@@ -79,14 +64,6 @@ class OAuth2Client(Base):
         for token in self.tokens:
             token.revoke()
             self.revoked_tokens += 1 
-
-    def _get_hex_string(self, algorithm, salt, raw_secret):
-        """Salts and encrypts the raw_secret"""
-        if algorithm == 'ssha':
-            import base64, hashlib
-            raw_salt = base64.b16decode(unicode.upper(salt))
-            return hashlib.sha1(raw_secret + raw_salt).hexdigest()
-        raise ValueError('Got unknown password algorithm type in password.')
 
     def _generate_unique_key(self, key_length=CLIENT_KEY_LENGTH):
         """Generates a unique key for the client"""
@@ -135,10 +112,13 @@ class OAuth2AccessToken(Base):
     def expired(self):
         """Returns ``True`` if the datetime from ``expires_at`` is in the past,
         relative to the server's time or it has been revoked."""
-        return not self.is_revoked() or self.expires_at < datetime.datetime.now()
+        return self.is_revoked() or self.expires_at < datetime.datetime.now()
     
     def set_scopes(self, scopes):
-        self.allowed_scopes = " ".join(scopes)
+        if scopes:
+            self.allowed_scopes = " ".join(scopes)
+        else:
+            self.allowed_scopes = ""
     
     def get_scopes(self):
         """Returns a list of all scopes allowed by the access token."""

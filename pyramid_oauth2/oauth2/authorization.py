@@ -45,9 +45,11 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
     """
     
     # Authentication
+    print "scope:", scopes
     datastore = OAuth2DataStore()
+    print "start"
     authenticated = datastore.confirm_authentication_credentials(auth_credentials)
-    
+    print "stop"
     if authenticated:
         # Validate allowed 
         allowed = datastore.confirm_allowed_scopes(scopes)

@@ -35,7 +35,6 @@ def token_endpoint(request):
     endpoint is used with every authorization grant except for the
     implicit grant type (since an access token is issued directly).
     """
-    print request.params
     request = OAuth2Request(request)
     
     grant_type = request.params.get('grant_type')
@@ -49,7 +48,7 @@ def token_endpoint(request):
     # Client Credentials Grant
     elif grant_type == 'client_credentials':
         scope = request.params.get('scope') # Optional
-        print request.params
+        print scope
         if scope:
             scope = scope.split(' ')
         return client_credentials_authorization(request.authentication, scope)        
