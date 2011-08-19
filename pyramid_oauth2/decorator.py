@@ -10,6 +10,7 @@ from pyramid_oauth2.resources.request import OAuth2Request
 
 def oauth2(allowed_scope=[], mandatory=True):
     def wrap(view_function):
+        
         def new_function(*args, **kw):
             handler = args[0]
             handler.request = OAuth2Request(handler.request)
@@ -34,7 +35,7 @@ def oauth2(allowed_scope=[], mandatory=True):
                     raise HTTPUnauthorized()
                 else:
                     return view_function(*args, **kw)
-                                
+        new_function.__doc__ = view_function.__doc__
         return new_function
     return wrap
 
