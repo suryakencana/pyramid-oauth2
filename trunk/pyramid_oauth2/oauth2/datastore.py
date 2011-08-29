@@ -69,6 +69,10 @@ class OAuth2DataStore(object):
         access_token = Session.query(OAuth2AccessToken).filter_by(token=token).first()
         # Validate access token
         if access_token and not access_token.expired():
+            # Pass if no scopes required
+            if required_scopes == []:
+                self.client_id = access_token.client_id
+                return True
             # Validate token scopes
             for token_scope in access_token.get_scopes():
                 if token_scope in required_scopes:

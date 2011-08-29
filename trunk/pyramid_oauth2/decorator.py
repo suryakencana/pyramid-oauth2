@@ -17,16 +17,19 @@ def oauth2(allowed_scope=[], mandatory=True):
             
             # Validate access token
             if handler.request.access_token:
+                print "Token found."
                 access_token = handler.request.access_token.get('token')
                 datastore = OAuth2DataStore()
                 valid = datastore.validate_access_token(access_token, allowed_scope)
                 if valid:
                     # Add client id to the request and execute view
                     client_id = datastore.client_id
+                    print "setting id to:", client_id
                     setattr(handler, 'requestor_id', client_id)
                     return view_function(*args, **kw)
                 # No
                 else:
+                    print "Token invalid"
                     if mandatory:
                         return OAuth2ErrorHandler.error_invalid_token(handler.request.access_token.get('type'))
                     else:
