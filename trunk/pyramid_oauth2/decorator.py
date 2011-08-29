@@ -27,12 +27,15 @@ def oauth2(allowed_scope=[], mandatory=True):
                     return view_function(*args, **kw)
                 # No
                 else:
-                    return OAuth2ErrorHandler.error_invalid_token(handler.request.access_token.get('type'))
+                    if mandatory:
+                        return OAuth2ErrorHandler.error_invalid_token(handler.request.access_token.get('type'))
+                    else:
+                        return view_function(*args, **kw)
             
             # Request does not contain an access token
             else:
                 if mandatory:
-                    raise HTTPUnauthorized()
+                    raise HTTPUnauthorized("Request contained no access token.")
                 else:
                     return view_function(*args, **kw)
         new_function.__doc__ = view_function.__doc__

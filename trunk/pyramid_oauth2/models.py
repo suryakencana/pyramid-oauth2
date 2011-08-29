@@ -41,6 +41,8 @@ class OAuth2Client(Base):
         self.image_url = image_url
         self.redirect_uri = redirect_uri
         self.key = self._generate_unique_key()
+        self.tokens_granted = 0
+        self.tokens_revoked = 0
     
     def set_scopes(self, allowed_scopes=[]):
         """Sets the scopes allowed by the client."""
