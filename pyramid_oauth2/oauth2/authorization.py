@@ -5,6 +5,7 @@ Created on 20-jul-2011
 '''
 from pyramid_oauth2.oauth2.datastore import OAuth2DataStore
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
+import logging
 import transaction
 
 def client_credentials_authorization(auth_credentials, scopes=[]):
@@ -45,15 +46,15 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
     """
     
     # Authentication
-    print "scope:", scopes
+    logging.debug("Starting client_credentials workflow")
+    logging.debug("Requested scopes: %s" % scopes)
     datastore = OAuth2DataStore()
-    print "start"
     authenticated = datastore.confirm_authentication_credentials(auth_credentials)
-    print "stop"
     if authenticated:
         # Validate allowed 
         allowed = datastore.confirm_allowed_scopes(scopes)
         if allowed:
+            logging.debug("Authentication allowed, issueing token.")
             client_id = datastore.client_id
             access_token = datastore.issue_access_token(client_id=client_id,
                                                         allowed_scopes=scopes,
@@ -64,8 +65,10 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
             transaction.commit()
             return response
         else:
+            logging.debug("One or more scopes were not allowed: %s" % scopes)
             # Scope was not allowed
             return OAuth2ErrorHandler.error_invalid_scope()
     else:
+        logging.debug("Client is not authorized to ask tokens.")
         # Client not authorized
         return OAuth2ErrorHandler.error_unauthorized_client()

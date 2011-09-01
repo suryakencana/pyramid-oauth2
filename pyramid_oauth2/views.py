@@ -48,7 +48,6 @@ def token_endpoint(request):
     # Client Credentials Grant
     elif grant_type == 'client_credentials':
         scope = request.params.get('scope') # Optional
-        print scope
         if scope:
             scope = scope.split(' ')
         return client_credentials_authorization(request.authentication, scope)        

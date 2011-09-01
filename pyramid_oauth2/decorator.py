@@ -7,6 +7,7 @@ from pyramid.httpexceptions import HTTPUnauthorized
 from pyramid_oauth2.oauth2.datastore import OAuth2DataStore
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
 from pyramid_oauth2.resources.request import OAuth2Request
+import logging
 
 def oauth2(allowed_scope=[], mandatory=True):
     def wrap(view_function):
@@ -17,19 +18,19 @@ def oauth2(allowed_scope=[], mandatory=True):
             
             # Validate access token
             if handler.request.access_token:
-                print "Token found."
+                logging.debug("Request contained a token.")
                 access_token = handler.request.access_token.get('token')
                 datastore = OAuth2DataStore()
                 valid = datastore.validate_access_token(access_token, allowed_scope)
                 if valid:
                     # Add client id to the request and execute view
                     client_id = datastore.client_id
-                    print "setting id to:", client_id
+                    logging.debug("Found token linked to client id %s." % client_id)
                     setattr(handler, 'requestor_id', client_id)
                     return view_function(*args, **kw)
                 # No
                 else:
-                    print "Token invalid"
+                    logging.debug("Found token appears to be invalid.")
                     if mandatory:
                         return OAuth2ErrorHandler.error_invalid_token(handler.request.access_token.get('type'))
                     else:
