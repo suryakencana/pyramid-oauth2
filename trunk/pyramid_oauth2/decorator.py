@@ -18,8 +18,8 @@ def oauth2(allowed_scope=[], mandatory=True):
             
             # Validate access token
             if handler.request.access_token:
-                logging.debug("Request contained a token.")
                 access_token = handler.request.access_token.get('token')
+                logging.debug("Request contained a token: %s" % access_token)
                 datastore = OAuth2DataStore()
                 valid = datastore.validate_access_token(access_token, allowed_scope)
                 if valid:
