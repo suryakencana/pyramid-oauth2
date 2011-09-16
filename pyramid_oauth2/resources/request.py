@@ -65,7 +65,7 @@ class OAuth2Request(Request):
             except ValueError: # not enough values to unpack
                 return None
             return dict(type='basic',
-                        client_key=key,
-                        client_secret=secret)
+                        client_key=unicode(key.strip()),
+                        client_secret=unicode(secret.strip()))
         
         return None

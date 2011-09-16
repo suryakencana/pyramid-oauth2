@@ -47,9 +47,9 @@ def token_endpoint(request):
         return OAuth2ErrorHandler.error_unsupported_grant_type() 
     # Client Credentials Grant
     elif grant_type == 'client_credentials':
-        scope = request.params.get('scope') # Optional
+        scope = request.params.get('scope', '') # Optional
         if scope:
             scope = scope.split(' ')
-        return client_credentials_authorization(request.authentication, scope)        
+        return client_credentials_authorization.delay(request.authentication, scope).get()
     else:
         return OAuth2ErrorHandler.error_unsupported_grant_type()

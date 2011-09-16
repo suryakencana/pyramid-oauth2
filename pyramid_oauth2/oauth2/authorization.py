@@ -3,11 +3,19 @@ Created on 20-jul-2011
 
 @author: kevin
 '''
-from pyramid_oauth2.oauth2.datastore import OAuth2DataStore
+from celery.task import task
+from pyramid_oauth2.oauth2 import datastore
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
 import logging
 import transaction
 
+@task
+def validate_access_token(access_token, allowed_scopes):
+    return datastore.is_valid_access_token(access_token, allowed_scopes)
+    
+
+
+@task
 def client_credentials_authorization(auth_credentials, scopes=[]):
     """
     The client can request an access token using only its client
@@ -48,14 +56,13 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
     # Authentication
     logging.debug("Starting client_credentials workflow")
     logging.debug("Requested scopes: %s" % scopes)
-    datastore = OAuth2DataStore()
-    authenticated = datastore.confirm_authentication_credentials(auth_credentials)
+    authenticated, client_id = datastore.authenticate(auth_credentials.get('client_key'),
+                                                      auth_credentials.get('client_secret'))
     if authenticated:
         # Validate allowed 
-        allowed = datastore.confirm_allowed_scopes(scopes)
+        allowed = datastore.can_request_scope(client_id, scopes)
         if allowed:
             logging.debug("Authentication allowed, issueing token.")
-            client_id = datastore.client_id
             access_token = datastore.issue_access_token(client_id=client_id,
                                                         allowed_scopes=scopes,
                                                         refreshable=False)
