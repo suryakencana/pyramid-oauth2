@@ -1,5 +1,4 @@
 from pyramid_oauth2.models import OAuth2Client, OAuth2AccessToken
-from pyramid_oauth2.oauth2 import tasks
 from pyramid_oauth2.oauth2.exceptions import ClientNotFoundError
 import logging
 import sqlahelper
