@@ -7,7 +7,7 @@ README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
-    'Pyramid>=1.1',
+    'Pyramid>=1.1a4',
     'akhet>=1.0.2',
     'sqlahelper'
     ]
@@ -32,4 +32,4 @@ setup(name='pyramid_oauth2',
       include_package_data=True,
       zip_safe=False,
       install_requires = requires
-      )
+)

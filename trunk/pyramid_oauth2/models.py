@@ -55,7 +55,7 @@ class OAuth2Client(Base):
     
     def check_secret(self, raw_secret):
         """Validates the raw_secret to the one in the database."""
-        return raw_secret == self.secret
+        return unicode(raw_secret) == self.secret
     
     def revoke(self):
         """Revoke all authorization requests, access grants and access tokens 

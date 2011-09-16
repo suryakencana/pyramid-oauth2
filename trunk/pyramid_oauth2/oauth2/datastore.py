@@ -1,107 +1,97 @@
-'''
-Created on 19-jul-2011
-
-@author: Kevin Van Wilder <kevin@tick.ee>
-'''
 from pyramid_oauth2.models import OAuth2Client, OAuth2AccessToken
-from pyramid_oauth2.oauth2.exceptions import ClientNotFound
-from sqlalchemy.orm.exc import NoResultFound
+from pyramid_oauth2.oauth2 import tasks
+from pyramid_oauth2.oauth2.exceptions import ClientNotFoundError
+import logging
 import sqlahelper
 
 Session = sqlahelper.get_session()
+    
+# actions
+
+def register_client(name, image_url=None, redirect_url=None, allowed_scopes=[]):
+    """Registers a new client that can request access tokens and access 
+    resources."""
+    client = OAuth2Client(name)
+    Session.add(client)
+    client.set_scopes(allowed_scopes)
+    Session.flush()
+    return client.id
 
 
-class OAuth2DataStore(object):
+def is_valid_access_token(token, allowed_scopes):
+    """Checks the validity of the access token."""
+    # Retrieve token information
+    token_info = Session.query(OAuth2AccessToken).filter_by(token=token).first()
+    if token_info and not token_info.expired():
+        # look for correct scope
+        for token_scope in token_info.get_scopes():
+            # correct scope found
+            if token_scope in allowed_scopes:
+                return (True, token_info.client_id)
+        
+    # Bad token
+    return (False, None)
+
+
+def authenticate(key, secret):
+    """Tries to authenticate a client using its key and secret
     
-    def __init__(self):
-        self.client_id = None
-        self.client_authenticated = False
-    
-    def register_client(self, name, image_url=None, redirect_url=None, allowed_scopes=[]):
-        """Registers a new client that can request access tokens and access 
-        resources."""
-        client = OAuth2Client(name)
-        Session.add(client)
-        client.set_scopes(allowed_scopes)
-        Session.flush()
-        return client.id
-    
-    def confirm_allowed_scopes(self, scopes):
-        """Matches the requested scopes of the client to the database."""
-        # Always allow if no scope specified
-        if not scopes:
-            return True
-        # Validate if scopes specified
-        if self.client_authenticated:
-            client = self.get_client_by_id(self.client_id)
-            for scope in scopes:
-                if not scope in client.allowed_scopes:
-                    # Scope was not allowed
-                    return False
-            # All scopes were allowed
-            return True
-        # Client is not authenticated, scopes can not be validated
+    Returns tuple (boolean, integer): true and the client_id if successful
+    else false and None
+    """
+    try:
+        client = get_client_by_key(key)
+    except ClientNotFoundError:
+        print("No client found with key: %s" % key)
+        return (False, None)
+    else:
+        if client.check_secret(secret):
+            return (True, client.id)
+        print type(secret)
+        print type(client.secret)
+        print("Secret '%s' did not match '%s'" % (secret, client.secret))
+        return (False, None)
+
+def can_request_scope(client_id, requested_scopes=[]):
+    """Checks if the requested scope can be granted to the client"""
+    try:
+        client = get_client_by_id(client_id)
+    except ClientNotFoundError:
         return False
-    
-    def confirm_authentication_credentials(self, authentication):
-        """Validates the authentication credentials to the information stored
-        in the database."""
-        if authentication:
-            given_key = authentication.get('client_key')
-            given_secret = authentication.get('client_secret')
-            # fetch client matching key
-            try:
-                possible_client = self.get_client_by_key(given_key)
-            except NoResultFound:
-                # no user found matching key
+    else:
+        # verify requested scopes
+        for requested_scope in requested_scopes:
+            if not requested_scope in client.allowed_scopes:
+                # scope was not allowed
                 return False
-            else:
-                # user found, match key
-                if possible_client.check_secret(given_secret):
-                    self.client_id = possible_client.id
-                    self.client_authenticated = True
-                return self.client_authenticated
-        return False
+        # all scopes were allowed
+        return True 
+
+
+def issue_access_token(client_id, allowed_scopes=[], refreshable=False):
+    """Issues an access token to the client"""
+    access_token = OAuth2AccessToken(refreshable)
+    access_token.set_scopes(allowed_scopes)
+    client = get_client_by_id(client_id)
+    access_token.client = client
+    # Increment granted client tokens
+    client.tokens_granted += 1
+    Session.add(access_token)
+    Session.flush()
+    return access_token
     
-    def validate_access_token(self, token, required_scopes=[]):
-        """The resource server MUST Validate the access token and ensure it has 
-        not expired and that its scope covers the requested resource."""
-        access_token = Session.query(OAuth2AccessToken).filter_by(token=token).first()
-        # Validate access token
-        if access_token and not access_token.expired():
-            # Pass if no scopes required
-            if required_scopes == []:
-                self.client_id = access_token.client_id
-                return True
-            # Validate token scopes
-            for token_scope in access_token.get_scopes():
-                if token_scope in required_scopes:
-                    self.client_id = access_token.client_id
-                    return True
-            # Token did not contain a correct scope
-            return False
-        else:
-            return False
-    
-    def get_client_by_id(self, id):
-        """Finds the client matching the client id."""
-        client = Session.query(OAuth2Client).get(id)
-        if not client:
-            raise ClientNotFound()
-        return client
-    
-    def get_client_by_key(self, key):
-        """Finds the client matching the client key."""
-        q = Session.query(OAuth2Client).filter_by(key=key)
-        return q.one()
-    
-    def issue_access_token(self, client_id, refreshable=True, allowed_scopes=[]):
-        """Creates an access token for the client."""
-        access_token = OAuth2AccessToken(refreshable)
-        access_token.set_scopes(allowed_scopes)
-        client = self.get_client_by_id(client_id)
-        access_token.client = client
-        # Increment granted client tokens
-        client.tokens_granted += 1
-        Session.add(access_token)
-        return access_token
+# internal
+
+def get_client_by_key(key):
+    """Fetches the client object belonging to the key"""
+    client = Session.query(OAuth2Client).filter(OAuth2Client.key==key).first()
+    if not client:
+        raise ClientNotFoundError
+    return client
+
+def get_client_by_id(id):
+    """Fetches the client object belonging to the id"""
+    client = Session.query(OAuth2Client).get(id)
+    if not client:
+        raise ClientNotFoundError
+    return client
