@@ -8,7 +8,7 @@ from pyramid_oauth2.oauth2.authorization import get_token_context
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
 from pyramid_oauth2.resources.request import OAuth2Request
 
-def oauth2(allowed_scopes,
+def oauth2(allowed_scopes=[],
            optional=False):
     def wrap(view_fn):
         def new_fn(request):
@@ -38,6 +38,7 @@ def oauth2(allowed_scopes,
                     raise HTTPUnauthorized('request contained no access token.')
             
         new_fn.__doc__ = view_fn.__doc__
+        new_fn.__name__ = view_fn.__name__
         return new_fn
     return wrap
 
