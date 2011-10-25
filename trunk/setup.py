@@ -9,7 +9,8 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 requires = [
     'Pyramid>=1.1a4',
     'akhet>=1.0.2',
-    'sqlahelper'
+    'sqlahelper',
+    'sqlalchemy-migrate'
     ]
 
 setup(name='pyramid_oauth2',

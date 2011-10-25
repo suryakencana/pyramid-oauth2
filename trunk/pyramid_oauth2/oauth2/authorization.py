@@ -13,7 +13,9 @@ import transaction
 def validate_access_token(access_token, allowed_scopes):
     return datastore.is_valid_access_token(access_token, allowed_scopes)
     
-
+@task
+def get_token_context(token):
+    return datastore.get_token_context(token)
 
 @task
 def client_credentials_authorization(auth_credentials, scopes=[]):

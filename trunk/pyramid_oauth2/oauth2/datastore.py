@@ -1,3 +1,4 @@
+from pyramid_oauth2 import Oauth2Context
 from pyramid_oauth2.models import OAuth2Client, OAuth2AccessToken
 from pyramid_oauth2.oauth2.exceptions import ClientNotFoundError
 import logging
@@ -16,6 +17,19 @@ def register_client(name, image_url=None, redirect_url=None, allowed_scopes=[]):
     Session.flush()
     return client.id
 
+def get_token_context(token):
+    """returns information about the token"""
+    token_info = Session.query(OAuth2AccessToken).filter_by(token=token).first()
+    context = Oauth2Context()
+    if token_info:
+        valid = not (token_info.expired() and token_info.is_revoked())
+        context.scopes = token_info.get_scopes()
+        context.client_id = token_info.client_id,
+        context.valid = valid
+    else:
+        context.valid = False 
+    return context
+
 
 def is_valid_access_token(token, allowed_scopes):
     """Checks the validity of the access token."""
@@ -26,10 +40,10 @@ def is_valid_access_token(token, allowed_scopes):
         for token_scope in token_info.get_scopes():
             # correct scope found
             if token_scope in allowed_scopes:
-                return (True, token_info.client_id)
+                return (True, token_info.client_id, token_scope)
         
     # Bad token
-    return (False, None)
+    return (False, None, None)
 
 
 def authenticate(key, secret):
