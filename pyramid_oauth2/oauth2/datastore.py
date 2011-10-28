@@ -24,7 +24,7 @@ def get_token_context(token):
     if token_info:
         valid = not (token_info.expired() and token_info.is_revoked())
         context.scopes = token_info.get_scopes()
-        context.client_id = token_info.client_id,
+        context.client_id = token_info.client_id
         context.valid = valid
     else:
         context.valid = False 

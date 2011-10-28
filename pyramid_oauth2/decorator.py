@@ -11,9 +11,9 @@ from pyramid_oauth2.resources.request import OAuth2Request
 def oauth2(allowed_scopes=[],
            optional=False):
     def wrap(view_fn):
-        def new_fn(request):
+        def new_fn(incoming_request):
             # get token
-            request = OAuth2Request(request)
+            request = OAuth2Request(incoming_request)
             token = request.access_token
             # handle token
             if token:
@@ -22,18 +22,18 @@ def oauth2(allowed_scopes=[],
                 if not oauth2_context.valid:
                     raise OAuth2ErrorHandler.error_invalid_token(token.get('type'))
                 # not mandatory use of oauth, but valid token
-                if optional:
-                    return view_fn(request, oauth2_context)
+                elif optional:
+                    return view_fn(request=incoming_request, oauth2_context=oauth2_context)
                 # validate scope
                 elif has_valid_scope(oauth2_context.scopes, allowed_scopes):
-                    return view_fn(request, oauth2_context)
+                    return view_fn(request=incoming_request, oauth2_context=oauth2_context)
                 # return oauth error for invalid token
                 else:
                     return OAuth2ErrorHandler.error_invalid_token(token.get('type'))
             # no token
             else:
                 if optional:
-                    return view_fn(request)
+                    return view_fn(request=incoming_request, oauth2_context=None)
                 else:
                     raise HTTPUnauthorized('request contained no access token.')
             
