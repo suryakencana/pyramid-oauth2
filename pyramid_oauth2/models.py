@@ -41,6 +41,7 @@ class OAuth2Client(Base):
         self.image_url = image_url
         self.redirect_uri = redirect_uri
         self.key = self._generate_unique_key()
+        self.secret = self._generate_secret()
         self.tokens_granted = 0
         self.tokens_revoked = 0
     
@@ -66,6 +67,9 @@ class OAuth2Client(Base):
         for token in self.tokens:
             token.revoke()
             self.revoked_tokens += 1 
+
+    def _generate_secret(self, secret_length=CLIENT_SECRET_LENGTH):
+        return generate_key(length=secret_length)
 
     def _generate_unique_key(self, key_length=CLIENT_KEY_LENGTH):
         """Generates a unique key for the client"""
