@@ -22,7 +22,7 @@ def get_token_context(token):
     token_info = Session.query(OAuth2AccessToken).filter_by(token=token).first()
     context = Oauth2Context()
     if token_info:
-        valid = not (token_info.expired() and token_info.is_revoked())
+        valid = not token_info.expired() and not token_info.is_revoked()
         context.scopes = token_info.get_scopes()
         context.client_id = token_info.client_id
         context.valid = valid
