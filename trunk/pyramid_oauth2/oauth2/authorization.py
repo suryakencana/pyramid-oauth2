@@ -58,6 +58,10 @@ def client_credentials_authorization(auth_credentials, scopes=[]):
     # Authentication
     logging.debug("Starting client_credentials workflow")
     logging.debug("Requested scopes: %s" % scopes)
+    
+    if auth_credentials is None:
+        return OAuth2ErrorHandler.error_unauthorized_client()
+    
     authenticated, client_id = datastore.authenticate(auth_credentials.get('client_key'),
                                                       auth_credentials.get('client_secret'))
     if authenticated:
