@@ -50,6 +50,8 @@ def token_endpoint(request):
         scope = request.params.get('scope', '') # Optional
         if scope:
             scope = scope.split(' ')
-        return client_credentials_authorization.delay(request.authentication, scope).get()
+        # only continue if valid authentication present
+        if request.authentication is not None:
+            return client_credentials_authorization.delay(request.authentication, scope).get()
     else:
         return OAuth2ErrorHandler.error_unsupported_grant_type()
