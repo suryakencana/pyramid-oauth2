@@ -7,6 +7,7 @@ from pyramid.view import view_config
 from pyramid_oauth2.oauth2.authorization import client_credentials_authorization
 from pyramid_oauth2.oauth2.errorhandling import OAuth2ErrorHandler
 from pyramid_oauth2.resources.request import OAuth2Request
+from pyramid.httpexceptions import HTTPBadRequest
 
 
 @view_config(route_name='oauth2-auth-endpoint', 
@@ -53,5 +54,7 @@ def token_endpoint(request):
         # only continue if valid authentication present
         if request.authentication is not None:
             return client_credentials_authorization.delay(request.authentication, scope).get()
+        else:
+            return HTTPBadRequest()
     else:
         return OAuth2ErrorHandler.error_unsupported_grant_type()
